@@ -1,0 +1,15 @@
+Feature URL Generator :
+    login (
+        autentikasi dan otorisasi menggunakan JWT ?
+    )
+    signup (
+        akun diaktifkan menggunakan link yang dikirim ke email
+    )
+    reset password (
+        link reset dikirim ke email
+    )
+    Manajemen url (
+        - menampilkan hasil url shortner
+        - menambah
+        - menghapus
+    )
