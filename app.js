@@ -3,6 +3,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
+require('dotenv').config();
 
 const userRoute = require('./routes/user.route');
 
@@ -16,11 +17,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/users', userRoute);
 
-mongoose.connect('mongodb://localhost:27017/db_latihan',
-    {
-        useNewUrlParser: true, 
-        useUnifiedTopology: true
-    }
+mongoose.connect(
+    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
+    // 'mongodb://localhost:27017/db_latihan'
 );
 
 const db = mongoose.connection;

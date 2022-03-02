@@ -21,6 +21,15 @@ exports.getAll = async (req, res) => {
 exports.insert = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+
+        const getUser = await User.findOne({ email });
+        if( getUser ) {
+            return res.status(409).send({
+                status: 'failed',
+                message: 'Email telah digunakan'
+            });
+        }
+
         const user = new User({
             username,
             email,
