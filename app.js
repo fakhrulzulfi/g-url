@@ -5,7 +5,7 @@ const logger = require('morgan');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const userRoute = require('./routes/user.route');
+const userRoute = require('./src/api/users/route');
 
 const app = express();
 
@@ -15,11 +15,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api/users', userRoute);
+app.use('/api/', userRoute);
 
 mongoose.connect(
-    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
-    // 'mongodb://localhost:27017/db_latihan'
+    // `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
+    'mongodb://localhost:27017/db_latihan'
 );
 
 const db = mongoose.connection;
