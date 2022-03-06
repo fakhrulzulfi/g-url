@@ -18,8 +18,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/', userRoute);
 
 mongoose.connect(
-    // `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
-    'mongodb://localhost:27017/db_latihan'
+    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
+    // 'mongodb://localhost:27017/db_latihan'
 );
 
 const db = mongoose.connection;

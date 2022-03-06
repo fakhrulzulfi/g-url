@@ -1,9 +1,9 @@
+require('dotenv').config();
 const User = require('./model');
 const CustomError = require('../../exceptions/CustomError');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
-require('dotenv').config();
+const {sendEmail} = require('../../mail/send_mail');
 
 exports.getOne = async (req, res) => {
     try {
@@ -112,11 +112,27 @@ exports.register = async (req, res) => {
         
         const insertUser = await user.save();
         
+        // mail configurations in /src/mail/send_mail.js
+        const mailTemplate = {
+            from: 'Doi Shortlink',
+            to: email,
+            subject: 'Please confirm your account',
+            html: `<div>
+            <h1>Email Confirmation</h1>
+            <h2>Halo, selamat ${username} pendaftaran akun anda berhasil!</h2>
+            <p>Selanjutnya, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda</p>
+            <p>http://localhost:3000/api/confirm/${token}</p>
+            <p>Terima kasih,</p>
+            <p>Doi Shortlink Team</p>
+            </div>`
+        };
+        sendEmail(mailTemplate);
+
         return res.status(200).send({
             status: 'success',
             message: 'Registrasi berhasil, silahkan cek email anda untuk mengaktifkan akun',
             user_id: insertUser._id
-        }); 
+        });
     } catch (error) {
         return res.status(error.statusCode || 500).send({
             status: 'failed',
@@ -148,6 +164,10 @@ exports.login = async (req, res) => {
             throw new CustomError('Email dan Password yang anda masukkan salah', 403);
         }
 
+        if( !selectUser.isActive ) {
+            throw new CustomError('Akun anda belum aktif, silahkan mengaktifkan akun melalui link yang telah diberikan di email Anda');
+        }
+
         const checkTokenIsValid = jwt.verify(selectUser.token, process.env.TOKEN_SECRET, (err, decoded) => {
             if( err ) {
                 const token = jwt.sign({ id: selectUser._id, username: selectUser.username }, process.env.TOKEN_SECRET, { expiresIn: '24h' });
@@ -168,6 +188,29 @@ exports.login = async (req, res) => {
             }
         });
         
+    } catch (error) {
+        return res.status(error.statusCode || 500).send({
+            status: 'failed',
+            message: error.message || 'Internal server error'
+        });
+    }
+};
+
+exports.confirmACcount = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const searchTokenInUser = await User.findOne({ token });
+        if( !searchTokenInUser ) {
+            throw new CustomError('User tidak terdaftar');
+        }
+
+        searchTokenInUser.isActive = true;
+        searchTokenInUser.save();
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'Akun berhasil diaktifkan, silahkan login ke dashboard'
+        });
     } catch (error) {
         return res.status(error.statusCode || 500).send({
             status: 'failed',
