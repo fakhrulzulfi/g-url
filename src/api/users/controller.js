@@ -168,26 +168,27 @@ exports.login = async (req, res) => {
             throw new CustomError('Akun anda belum aktif, silahkan mengaktifkan akun melalui link yang telah diberikan di email Anda');
         }
 
-        const checkTokenIsValid = jwt.verify(selectUser.token, process.env.TOKEN_SECRET, (err, decoded) => {
-            if( err ) {
-                const token = jwt.sign({ id: selectUser._id, username: selectUser.username }, process.env.TOKEN_SECRET, { expiresIn: '24h' });
-                selectUser.token = token;
-                selectUser.save();
-
-                return res.status(200).send({
-                    status: 'success',
-                    message: 'Login berhasil',
-                    token
-                }); 
-            } else {
-                return res.status(200).send({
-                    status: 'success',
-                    message: 'Login berhasil',
-                    token: selectUser.token
-                });
-            }
-        });
         
+        try {
+            const checkTokenIsValid = jwt.verify(selectUser.token, process.env.TOKEN_SECRET);
+
+            return res.status(200).send({
+                status: 'success',
+                message: 'Login berhasil',
+                token: selectUser.token
+            });
+        } catch(err) {
+            //  Token tidak valid
+            const token = jwt.sign({ id: selectUser._id, username: selectUser.username }, process.env.TOKEN_SECRET, { expiresIn: '24h' });
+            selectUser.token = token;
+            selectUser.save();
+
+            return res.status(200).send({
+                status: 'success',
+                message: 'Login berhasil',
+                token
+            }); 
+        }
     } catch (error) {
         return res.status(error.statusCode || 500).send({
             status: 'failed',
