@@ -4,9 +4,11 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const fs = require('fs');
 require('dotenv').config();
 
 const userRoute = require('./src/api/users/route');
+const urlRoute = require('./src/api/urls/route');
 
 const app = express();
 
@@ -22,11 +24,12 @@ const accessLogStream = fs.createWriteStream(
     path.join(__dirname, 'access.log'),
     { flags: 'a' }
 );
-app.use(morgan('combined', {
+app.use(logger('combined', {
     interfal: '7d',
     stream: accessLogStream
 }));
 
+app.use('/', urlRoute);
 app.use('/api/', userRoute);
 
 mongoose.connect(
