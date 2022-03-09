@@ -7,9 +7,9 @@ const {sendEmail} = require('../../mail/send_mail');
 
 exports.getOne = async (req, res) => {
     try {
-        const { user_id } = req.params;
-        const user = await User.findOne({ _id: user_id });
-
+        const user_id = req.user;
+        const user = await User.findOne({ _id: user_id }).populate('urls');
+        
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
         }
@@ -29,28 +29,33 @@ exports.getOne = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        const { user_id } = req.params;
+        const user_id  = req.user;
         const user = await User.findOne({ _id: user_id });
         
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
         }
 
-        /**
-         * NOTE : (menyusul)
-         * Membuat validasi user hanya bisa update jika id dari user yang di update 
-         * sama dengan id di dalam token JWT
-         */
+        const oldPassword = req.body.oldPassword;
+        const passwordIsValid = bcrypt.compareSync(oldPassword, user.password);
+
+        if( !passwordIsValid ) {
+            throw new CustomError('Password lama Anda salah', 403);
+        }
+
+        const saltRounds = 10
+        const hashPassword = bcrypt.hashSync(req.body.password, saltRounds);
+
         const data = {
-            password: req.body.password
+            password: hashPassword
         };
         
-        const userUpdate = await User.findOneAndUpdate({ _id: user_id }, data);
+        await User.findOneAndUpdate({ _id: user_id }, data);
         
         return res.status(200).send({
             status: 'success',
             message: 'Berhasil mengubah password'
-        }); 
+        });
     } catch (error) {
         return res.status(error.statusCode || 500).send({
             status: 'failed',
@@ -61,11 +66,17 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try {
-        const { user_id } = req.params;
+        const user_id = req.user;
         const user = await User.findOne({ _id: user_id });
 
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
+        }
+
+        const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+
+        if( !passwordIsValid ) {
+            throw new CustomError('Password Anda salah', 403);
         }
 
         const deleteUser = await User.findOneAndDelete({ _id: user_id });
@@ -167,7 +178,6 @@ exports.login = async (req, res) => {
         if( !selectUser.isActive ) {
             throw new CustomError('Akun anda belum aktif, silahkan mengaktifkan akun melalui link yang telah diberikan di email Anda');
         }
-
         
         try {
             const checkTokenIsValid = jwt.verify(selectUser.token, process.env.TOKEN_SECRET);
@@ -197,7 +207,7 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.confirmACcount = async (req, res) => {
+exports.confirmAccount = async (req, res) => {
     try {
         const { token } = req.params;
         const searchTokenInUser = await User.findOne({ token });
