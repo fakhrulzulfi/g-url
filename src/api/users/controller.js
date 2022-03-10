@@ -1,5 +1,6 @@
 require('dotenv').config();
 const User = require('./model');
+const Url = require('../urls/model');
 const CustomError = require('../../exceptions/CustomError');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -79,6 +80,7 @@ exports.delete = async (req, res) => {
             throw new CustomError('Password Anda salah', 403);
         }
 
+        const deleteUrl = await Url.findOneAndDelete({ user: user_id });
         const deleteUser = await User.findOneAndDelete({ _id: user_id });
 
         return res.status(200).send({
