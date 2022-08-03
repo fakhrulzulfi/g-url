@@ -3,13 +3,17 @@ const User = require('./model');
 const Url = require('../urls/model');
 const CustomError = require('../../exceptions/CustomError');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const {sendEmail} = require('../../mail/send_mail');
+const jwtDecoder = require('jwt-decode');
+const sendEmail = require('../../mail/send_mail');
+const HASH_ROUND = 10;
 
-exports.getOne = async (req, res) => {
+
+exports.get = async (req, res) => {
     try {
-        const user_id = req.user;
-        const user = await User.findOne({ _id: user_id }).populate('urls');
+        const { userID = null } = req.params;
+        const user = userID === null 
+        ? await User.find().select('-password') 
+        : await User.findOne({ _id: userID }).select('-password');
         
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
@@ -21,7 +25,7 @@ exports.getOne = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
                 status: 'failed',
                 message: error.message || 'Internal server error'
         });
@@ -30,58 +34,67 @@ exports.getOne = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        const user_id  = req.user;
-        const user = await User.findOne({ _id: user_id });
+        const { userID } = req.params;
+        const { username } = req.body;
         
+        // Authorization
+        // Memastikan user hanya bisa mengubah datanya sendiri
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const user = await User.findOne({ _id: userID });
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
         }
-
-        const oldPassword = req.body.oldPassword;
-        const passwordIsValid = bcrypt.compareSync(oldPassword, user.password);
-
-        if( !passwordIsValid ) {
-            throw new CustomError('Password lama Anda salah', 403);
+        if( user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
         }
 
-        const saltRounds = 10
-        const hashPassword = bcrypt.hashSync(req.body.password, saltRounds);
-
         const data = {
-            password: hashPassword
-        };
-        
-        await User.findOneAndUpdate({ _id: user_id }, data);
-        
+            ...user._doc,
+            username
+        }
+
+        await User.findOneAndUpdate({ _id: userID }, data);
+
         return res.status(200).send({
             status: 'success',
-            message: 'Berhasil mengubah password'
+            message: 'Data pengguna berhasil diperbarui'
         });
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
-            message: error.message || 'Internal server error'
+            message: error.message || 'Internal Server Error'
         });
     }
 };
 
 exports.delete = async (req, res) => {
     try {
-        const user_id = req.user;
-        const user = await User.findOne({ _id: user_id });
+        const { userID } = req.params;
+        const { confirmPassword } = req.body;
+        
+        // Authorization
+        // Memastikan user hanya bisa menghapus datanya sendiri
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const user = await User.findOne({ _id: userID });
+        if( !user ) {
+            throw new CustomError('User tidak terdaftar', 404);
+        }
+        if( user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
+        }
 
         if( !user ) {
             throw new CustomError('User tidak terdaftar', 404);
         }
 
-        const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+        const passwordIsValid = bcrypt.compareSync(confirmPassword, user.password);
 
         if( !passwordIsValid ) {
-            throw new CustomError('Password Anda salah', 403);
+            throw new CustomError('Password Anda tidak sesuai', 403);
         }
 
-        const deleteUrl = await Url.findOneAndDelete({ user: user_id });
-        const deleteUser = await User.findOneAndDelete({ _id: user_id });
+        await Url.deleteMany({ 'user': userID });
+        await User.findOneAndDelete({ _id: userID });
 
         return res.status(200).send({
             status: 'success',
@@ -89,145 +102,127 @@ exports.delete = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
                 status: 'failed',
                 message: error.message || 'Internal server error'
         });
     }
 };
 
-exports.register = async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
-
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if( !re.test(email) ) {
-            throw new CustomError('Email tidak valid');
-        }
-
-        const getUser = await User.findOne({ email });
-        if( getUser ) {
-            throw new CustomError('Email telah terdaftar, gunakan email yang berbeda', 409);
-        }
-        
-        const saltRounds = 10
-        const hashPassword = bcrypt.hashSync(password, saltRounds);
-
-        const user = new User({
-            username,
-            email,
-            password: hashPassword,
-            isActive: false
-        });
-
-        const token = jwt.sign({ id: user._id, username: user.username }, process.env.TOKEN_SECRET, { expiresIn: '24h' });
-        user.token = token; // Save token 
-        
-        const insertUser = await user.save();
-        
-        // mail configurations in /src/mail/send_mail.js
-        const mailTemplate = {
-            from: 'Doi Shortlink',
-            to: email,
-            subject: 'Please confirm your account',
-            html: `<div>
-            <h1>Email Confirmation</h1>
-            <h2>Halo, selamat ${username} pendaftaran akun anda berhasil!</h2>
-            <p>Selanjutnya, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda</p>
-            <p>http://localhost:3000/api/confirm/${token}</p>
-            <p>Terima kasih,</p>
-            <p>Doi Shortlink Team</p>
-            </div>`
-        };
-        sendEmail(mailTemplate);
-
-        return res.status(200).send({
-            status: 'success',
-            message: 'Registrasi berhasil, silahkan cek email anda untuk mengaktifkan akun',
-            user_id: insertUser._id
-        });
-    } catch (error) {
-        return res.status(error.statusCode || 500).send({
-            status: 'failed',
-            message: error.message || 'Internal server error'
-        });
-    }
-};
-
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if( !email || !password ) {
-            throw new CustomError('Email dan password tidak boleh kosong');
-        }
-        
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if( !re.test(email) ) {
-            throw new CustomError('Email tidak valid');
-        }
-
-        const selectUser = await User.findOne({ email });
-        if( !selectUser ) {
-            throw new CustomError('Email tidak terdaftar', 404);
-        }
-
-        const matchPwd = bcrypt.compareSync(password, selectUser.password);
-        if( !matchPwd ) {
-            throw new CustomError('Email dan Password yang anda masukkan salah', 403);
-        }
-
-        if( !selectUser.isActive ) {
-            throw new CustomError('Akun anda belum aktif, silahkan mengaktifkan akun melalui link yang telah diberikan di email Anda');
-        }
-        
-        try {
-            const checkTokenIsValid = jwt.verify(selectUser.token, process.env.TOKEN_SECRET);
-
-            return res.status(200).send({
-                status: 'success',
-                message: 'Login berhasil',
-                token: selectUser.token
-            });
-        } catch(err) {
-            //  Token tidak valid
-            const token = jwt.sign({ id: selectUser._id, username: selectUser.username }, process.env.TOKEN_SECRET, { expiresIn: '24h' });
-            selectUser.token = token;
-            selectUser.save();
-
-            return res.status(200).send({
-                status: 'success',
-                message: 'Login berhasil',
-                token
-            }); 
-        }
-    } catch (error) {
-        return res.status(error.statusCode || 500).send({
-            status: 'failed',
-            message: error.message || 'Internal server error'
-        });
-    }
-};
-
 exports.confirmAccount = async (req, res) => {
     try {
-        const { token } = req.params;
-        const searchTokenInUser = await User.findOne({ token });
-        if( !searchTokenInUser ) {
-            throw new CustomError('User tidak terdaftar');
+        const { userID, token } = req.params;
+        const user = await User.findOne({ _id: userID });
+        if( !user ) {
+            throw new CustomError('Pengguna tidak terdaftar');
         }
 
-        searchTokenInUser.isActive = true;
-        searchTokenInUser.save();
+        if( user.token != token ) {
+            throw new CustomError('')
+        }
+
+        user.isActive = true;
+        user.save();
 
         return res.status(200).send({
             status: 'success',
             message: 'Akun berhasil diaktifkan, silahkan login ke dashboard'
         });
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
             message: error.message || 'Internal server error'
+        });
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { userID }  = req.params;
+        const { oldPassword, newPassword } = req.body;
+
+        // Authorization
+        // Memastikan user hanya bisa mengubah passwordnya sendiri
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const user = await User.findOne({ _id: userID });
+        if( !user ) {
+            throw new CustomError('User tidak terdaftar', 404);
+        }
+        if( user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
+        }
+
+        const passwordIsValid = bcrypt.compareSync(oldPassword, user.password);
+
+        if( !passwordIsValid ) {
+            throw new CustomError('Password yang Anda masukkan salah', 403);
+        }
+
+        const hashPassword = bcrypt.hashSync(newPassword, HASH_ROUND);
+
+        await User.findOneAndUpdate({ _id: userID }, { password: hashPassword });
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'Berhasil mengubah password'
+        });
+    } catch (error) {
+        return res.status(error.code || 500).send({
+            status: 'failed',
+            message: error.message || 'Internal server error'
+        });
+    }
+};
+
+exports.changeEmail = async (req, res) => {
+    try {
+        const { userID } = req.params;
+        const { email } = req.body;
+
+        // Authorization
+        // Memastikan user hanya bisa mengubah passwordnya sendiri
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const user = await User.findOne({ _id: userID });
+        if( !user ) {
+            throw new CustomError('User tidak terdaftar', 404);
+        }
+        if( user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
+        }
+
+        const data = {
+            ...user._doc,
+            email,
+            isActive: false
+        };
+
+        await User.findOneAndUpdate({ _id: userID }, data);
+
+        const mailTemplate = {
+            from: 'Doi Shortlink',
+            to: email,
+            subject: 'Please confirm your account',
+            html: `<div>
+            <h1>Email Confirmation</h1>
+            <h2>Halo, selamat ${user.username} pengubahan akun Email anda berhasil!</h2>
+            <p>Saat ini status akun Anda non-aktif, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda.</p>
+            <p>http://localhost:3000/api/confirm/${user._id}/${user.token}</p>
+            <p>Tautan tersebut hanya berlaku selama 48 jam.</p>
+            <br>
+            <p>Terima kasih,</p>
+            <p>Doi Shortlink Team</p>
+            </div>`
+        };
+        // sendEmail(mailTemplate);
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'Email berhasil diubah, silahkan cek akun email pada kotak masuk atau spam untuk mengaktifkan akun Anda.'
+        });
+    } catch (error) {
+        return res.status(error.code || 500).send({
+            status: 'failed',
+            message: error.message || 'Internal Server Error'
         });
     }
 };

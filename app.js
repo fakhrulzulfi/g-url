@@ -2,13 +2,14 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const fs = require('fs');
 require('dotenv').config();
 
 const userRoute = require('./src/api/users/route');
 const urlRoute = require('./src/api/urls/route');
+const authRoute = require('./src/api/auth/route');
+const redirectRoute = require('./src/api/redirect/route');
 
 const app = express();
 
@@ -29,16 +30,14 @@ app.use(logger('combined', {
     stream: accessLogStream
 }));
 
-app.use('/', urlRoute);
+app.use('/', redirectRoute);
+app.use('/api/', urlRoute);
 app.use('/api/', userRoute);
+app.use('/api/', authRoute);
 
-mongoose.connect(
-    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@cluster0.edg8i.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`
-    // 'mongodb://localhost:27017/db_latihan'
-);
-
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => console.log('database connected'));
+app.use(function (err, req, res, next) {
+    // handle error non-async route
+    res.status(500).send(err.message)
+});
 
 module.exports = app;

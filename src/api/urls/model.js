@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const Url = new Schema({
+const UrlSchema = new Schema({
     short_url: {
         type: String,
         required: true,
@@ -13,9 +13,9 @@ const Url = new Schema({
     },
     user: {
         type: Schema.Types.ObjectId,
-        ref: 'users',
+        ref: 'User',
         required: true
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model('urls', Url);
+module.exports = mongoose.model('Url', UrlSchema);

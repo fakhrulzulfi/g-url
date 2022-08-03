@@ -1,6 +1,6 @@
 Feature URL Generator :
     login (
-        autentikasi dan otorisasi menggunakan JWT ?
+        autentikasi dan otorisasi menggunakan JWT
     )
     signup (
         akun diaktifkan menggunakan link yang dikirim ke email
@@ -13,3 +13,33 @@ Feature URL Generator :
         - menambah
         - menghapus
     )
+
+
+# Docker
+running docker : sudo docker-compose -f docker-compose.yml up -d <--build>
+masuk ke terminal container : sudo docker exec -it <nama_container> sh
+memantau logs : sudo docker logs g-url -f
+
+$ sudo docker container ls
+$ sudo docker volume ls
+$ sudo docker image ls
+
+
+# ROUTE 
+URL
+/:code                      -> untuk me-redirect ke link tujuan menggunakan kode [get] @redirectTo
+/api/url                    -> [get, post, put, delete] @getAll @insert @
+
+USER
+/api/user                   -> [get, post, put, patch, delete]
+/api/user/:userID           -> untuk melihat pengguna (semua informasi kecuali URL) [get]
+/api/user/:userID/url       -> untuk melihat url yang dibuat oleh pengguna [get]
+/api/user/forget-password   -> untuk mengubah password akun [post]
+/api/user/confirm/:token    -> untuk mengaktifkan akun yang telah didaftarkan [get]
+
+AUTH
+/api/login             -> untuk login [post]
+/api/register          -> untuk register [post]
+
+
+! validation thrid party

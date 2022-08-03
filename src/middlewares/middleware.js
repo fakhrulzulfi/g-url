@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const CustomError = require('../exceptions/CustomError');
+const User = require('../api/users/model');
 
 exports.checkToken = (req, res, next) => {
     try {
@@ -18,9 +19,29 @@ exports.checkToken = (req, res, next) => {
             });
         }
         
-        return res.status(401).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
-            message: 'Sesi Anda telah habis, silahkan login ulang'
+            message: error.message || 'Internal Server Error'
         });
     }
 };
+
+exports.isActive = async (req, res, next) => {
+    try {
+        const user = await User.findOne({ _id: req.user });
+        
+        if( !user ) {
+            throw new CustomError('Pengguna tidak terdaftar', 404);
+        }
+
+        if( user.isActive === false ) {
+            throw new CustomError('Akun anda belum aktif, silahkan mengaktifkan akun melalui link yang telah dikirimkan pada email Anda');
+        }
+        next();
+    } catch (error) {
+        return res.status(error.code || 500).send({
+            status: 'failed',
+            message: error.message || 'Internal Server Error'
+        });
+    }
+}

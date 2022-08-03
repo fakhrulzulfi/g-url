@@ -2,19 +2,23 @@ require('dotenv').config();
 const Url = require('./model');
 const User = require('../users/model');
 const CustomError = require('../../exceptions/CustomError');
-const validUrl = require('valid-url');
 const shortId = require('shortid');
+const jwtDecoder = require('jwt-decode');
+
 
 exports.getAll = async (req, res) => {
     try {
-        const urls = await Url.find();
+        const { urlID = null } = req.params;
+        const urls = urlID === null
+        ? await Url.find()
+        : await Url.findOne({ _id: urlID });
 
         return res.status(200).send({
             status: 'success',
             data: urls
         });
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
             message: error.message || 'Internal server error'
         });
@@ -34,39 +38,81 @@ exports.insert = async (req, res) => {
             long_url: url,
             user: user_id
         });
-        insertUrl.save();       // save to Url collection
-
-        const getUserFromId = await User.findOne({_id: user_id});
-        getUserFromId.urls.push(insertUrl._id);
-        getUserFromId.save();   // save to User collection
-
-        return res.status(200).send({
-            status: 'success',
-            message: 'Shortlink berhasil dibuat',
-            link: `http://localhost:3000/${customCode}`
-        });
+        
+        insertUrl
+            .save()
+            .then(result => {
+                return res.status(201).send({
+                    status: 'success',
+                    message: 'Shortlink berhasil dibuat',
+                    link: `http://localhost:3000/${result.short_url}`
+                });
+            })
+            .catch(error => {
+                if( error.code === 11000 ) {
+                    return res.status(409).send({
+                        status: 'failed',
+                        message: 'Custom URL yang Anda masukkan telah digunakan'
+                    });
+                }
+            });
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
             message: error.message || 'Internal server error'
         });
     }
 };
 
-exports.redirectTo = async (req, res) => {
+exports.update = async (req, res) => {
     try {
-        const { code } = req.params;
+        const { urlID } = req.params;
+        const { short_url, long_url } = req.body;
         
-        const checkCodeIsValid = await Url.findOne({ short_url: code });
-        if( !checkCodeIsValid ) {
-            throw new CustomError('Link tidak terdaftar', 404);
+        // Authorization
+        // Memastikan URL tersebut sesuai dengan pemiliknya
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const url = await Url.findOne({ _id: urlID }).populate('user');
+        if( url.user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
         }
-        
-        return res.redirect(checkCodeIsValid.long_url);
+
+        await Url.findOneAndUpdate({ _id: urlID }, {short_url, long_url});
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'Data URL berhasil diperbarui'
+        });
     } catch (error) {
-        return res.status(error.statusCode || 500).send({
+        return res.status(error.code || 500).send({
             status: 'failed',
             message: error.message || 'Internal server error'
+        });
+    }
+};
+
+exports.delete = async (req, res) => {
+    try {
+        const { urlID } = req.params;
+        
+        // Authorization
+        // Memastikan URL tersebut sesuai dengan pemiliknya
+        const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
+        const url = await Url.findOne({ _id: urlID }).populate('user');
+        if( url.user._id.toString() !== getUserID ) {
+            throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
+        }
+
+        await Url.findOneAndRemove({ _id: urlID });
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'URL berhasil dihapus'
+        });
+    } catch (error) {
+        return res.status(error.code || 500).send({
+            status: 'failed',
+            message: error.message || 'Internal Server Error'
         });
     }
 };
