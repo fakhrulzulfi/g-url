@@ -67,7 +67,7 @@ exports.insert = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { urlID } = req.params;
-        const { short_url, long_url } = req.body;
+        const { longUrl, customCode } = req.body;
         
         // Authorization
         // Memastikan URL tersebut sesuai dengan pemiliknya
@@ -77,7 +77,7 @@ exports.update = async (req, res) => {
             throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
         }
 
-        await Url.findOneAndUpdate({ _id: urlID }, {short_url, long_url});
+        await Url.findOneAndUpdate({ _id: urlID }, {short_url: customCode, long_url: longUrl});
 
         return res.status(200).send({
             status: 'success',
