@@ -1,4 +1,5 @@
 const Url = require('../urls/model');
+const CustomError = require('../../exceptions/CustomError');
 
 exports.redirectTo = async (req, res) => {
     try {

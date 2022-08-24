@@ -45,7 +45,7 @@ exports.insert = async (req, res) => {
                 return res.status(201).send({
                     status: 'success',
                     message: 'Shortlink berhasil dibuat',
-                    link: `http://localhost:3000/${result.short_url}`
+                    link: `http://localhost:1337/${result.short_url}`
                 });
             })
             .catch(error => {
@@ -99,7 +99,7 @@ exports.delete = async (req, res) => {
         // Memastikan URL tersebut sesuai dengan pemiliknya
         const getUserID = jwtDecoder(req.headers.authorization.split(' ')[1]).id;
         const url = await Url.findOne({ _id: urlID }).populate('user');
-        if( url.user._id.toString() !== getUserID ) {
+        if( url.user === null || url.user._id.toString() !== getUserID ) {
             throw new CustomError('Maaf, Anda tidak dapat mengakses data tersebut', 401);
         }
 

@@ -4,7 +4,7 @@ const Url = require('../urls/model');
 const CustomError = require('../../exceptions/CustomError');
 const bcrypt = require('bcrypt');
 const jwtDecoder = require('jwt-decode');
-const sendEmail = require('../../mail/send_mail');
+const { sendEmail } = require('../../mail/send_mail');
 const HASH_ROUND = 10;
 
 
@@ -202,14 +202,14 @@ exports.changeEmail = async (req, res) => {
         await User.findOneAndUpdate({ _id: userID }, data);
 
         const mailTemplate = {
-            from: 'Doi Shortlink',
+            from: 'Admin Doi Shortlink URL',
             to: email,
             subject: 'Please confirm your account',
             html: `<div>
             <h1>Email Confirmation</h1>
             <h2>Halo, selamat ${user.username} pengubahan akun Email anda berhasil!</h2>
             <p>Saat ini status akun Anda non-aktif, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda.</p>
-            <p>http://localhost:3000/api/confirm/${user._id}/${user.token}</p>
+            <p>http://localhost:1337/api/user/confirm/${user._id}/${user.token}</p>
             <p>Tautan tersebut hanya berlaku selama 48 jam.</p>
             <br>
             <p>Terima kasih,</p>

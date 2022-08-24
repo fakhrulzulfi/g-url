@@ -29,6 +29,7 @@ exports.login = async (req, res) => {
             return res.status(200).send({
                 status: 'success',
                 message: 'Login berhasil',
+                userID: selectUser._id,
                 token: selectUser.token
             });
         } catch(err) {
