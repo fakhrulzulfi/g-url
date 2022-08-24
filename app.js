@@ -31,9 +31,9 @@ app.use(logger('combined', {
 }));
 
 app.use('/', redirectRoute);
-app.use('/api/', urlRoute);
-app.use('/api/', userRoute);
-app.use('/api/', authRoute);
+app.use('/api/url/', urlRoute);
+app.use('/api/user/', userRoute);
+app.use('/api/auth/', authRoute);
 
 app.use(function (err, req, res, next) {
     // handle error non-async route

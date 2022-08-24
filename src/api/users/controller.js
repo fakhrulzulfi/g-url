@@ -113,16 +113,19 @@ exports.confirmAccount = async (req, res) => {
     try {
         const { userID, token } = req.params;
         const user = await User.findOne({ _id: userID });
+
         if( !user ) {
             throw new CustomError('Pengguna tidak terdaftar');
         }
 
         if( user.token != token ) {
-            throw new CustomError('')
+            throw new CustomError('Token bermasalah')
         }
-
-        user.isActive = true;
-        user.save();
+        
+        await User.findOneAndUpdate({ _id: user._id }, {
+            ...user._doc,
+            isActive: true
+        });
 
         return res.status(200).send({
             status: 'success',
@@ -213,7 +216,7 @@ exports.changeEmail = async (req, res) => {
             <p>Doi Shortlink Team</p>
             </div>`
         };
-        // sendEmail(mailTemplate);
+        sendEmail(mailTemplate);
 
         return res.status(200).send({
             status: 'success',

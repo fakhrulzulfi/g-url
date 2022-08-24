@@ -3,7 +3,7 @@ const User = require('../users/model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const CustomError = require('../../exceptions/CustomError');
-const sendEmail = require('../../mail/send_mail');
+const { sendEmail } = require('../../mail/send_mail');
 
 exports.login = async (req, res) => {
     try {
@@ -70,22 +70,21 @@ exports.register = async (req, res) => {
             .then(result => {
                 // mail configurations in /src/mail/send_mail.js
                 const mailTemplate = {
-                    from: 'Doi Shortlink',
+                    from: 'Admin Doi Shortlink URL',
                     to: result.email,
                     subject: 'Please confirm your account',
                     html: `<div>
                     <h1>Email Confirmation</h1>
                     <h2>Halo, selamat ${result.username} pendaftaran akun anda berhasil!</h2>
                     <p>Selanjutnya, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda</p>
-                    <p>http://localhost:3000/api/confirm/${result._id}/${result.token}</p>
+                    <p>http://localhost:1337/api/user/confirm/${result._id}/${result.token}</p>
                     <p>Tautan tersebut hanya berlaku selama 48 jam.</p>
                     <br>
                     <p>Terima kasih,</p>
                     <p>Doi Shortlink Team</p>
                     </div>`
                 };
-                // sendEmail(mailTemplate);
-
+                sendEmail(mailTemplate);
                 return res.status(200).send({
                     status: 'success',
                     message: 'Registrasi berhasil, silahkan cek Email anda pada Kotak Masuk atau Spam untuk mengaktifkan akun'
