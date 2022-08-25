@@ -1,17 +1,13 @@
-version: '3.3'
-
+version: '3.7'
 services:
-  app:
-    container_name: 'g-url'
+  gurl-app:
     build: .
+    container_name: gurl-container
+    networks:
+      - gurl-networks
+    ports:
+      - 1337:1337
     volumes:
       - .:/app
-      - node_modules:/app/node_modules
-    ports:
-      - "6969:1337"
-    stdin_open: true
-    env_file:
-      - .env
-    command: yarn dev
-volumes:
-  node_modules:
+networks:
+  gurl-networks:

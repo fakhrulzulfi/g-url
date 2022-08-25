@@ -1,11 +1,10 @@
 FROM node:alpine
 
+RUN apk update && apk add ca-certificates openssl && update-ca-certificates
+
+RUN mkdir /app
+ADD . /app
 WORKDIR /app
 
-COPY package*.json ./
-
-RUN yarn install --ignore-engines
-
-COPY . ./
-
-EXPOSE 1337
+RUN yarn install
+CMD yarn dev
