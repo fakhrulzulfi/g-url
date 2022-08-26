@@ -5,7 +5,7 @@ exports.updateSchema = Joi.object({
 });
 
 exports.deleteSchema = Joi.object({
-    password: Joi.string().min(8).max(255).required()
+    confirmPassword: Joi.string().min(8).max(255).required()
 });
 
 exports.changeEmailSchema = Joi.object({

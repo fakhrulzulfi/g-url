@@ -733,3 +733,5 @@
 ::ffff:127.0.0.1 - - [26/Aug/2022:06:42:56 +0000] "DELETE /api/user/63086a3eac2ca8cae537be7c/delete HTTP/1.1" 422 82 "-" "insomnia/2022.5.0"
 ::ffff:127.0.0.1 - - [26/Aug/2022:06:43:01 +0000] "DELETE /api/user/63086a3eac2ca8cae537be7c/delete HTTP/1.1" 500 64 "-" "insomnia/2022.5.0"
 ::ffff:127.0.0.1 - - [26/Aug/2022:06:43:14 +0000] "DELETE /api/user/63086a3eac2ca8cae537be7c/delete HTTP/1.1" 500 64 "-" "insomnia/2022.5.0"
+::ffff:127.0.0.1 - - [26/Aug/2022:06:46:14 +0000] "DELETE /api/user/63086a3eac2ca8cae537be7c/delete HTTP/1.1" 403 58 "-" "insomnia/2022.5.0"
+::ffff:127.0.0.1 - - [26/Aug/2022:06:46:18 +0000] "DELETE /api/user/63086a3eac2ca8cae537be7c/delete HTTP/1.1" 200 56 "-" "insomnia/2022.5.0"
