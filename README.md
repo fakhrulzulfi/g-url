@@ -2,8 +2,8 @@
 Doi Shortlink URL (Backend Only)
 
 ## Cara menjalankan server : 
-- yarn install
-- yarn run dev
+- npm install
+- npm run dev
 
 ## Cara menjalankan dokumentasi :
 - cd documentation/

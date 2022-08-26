@@ -713,3 +713,6 @@
 ::ffff:127.0.0.1 - - [24/Aug/2022:02:48:45 +0000] "GET / HTTP/1.1" 404 139 "-" "insomnia/2022.5.0"
 ::ffff:172.18.0.1 - - [24/Aug/2022:06:55:27 +0000] "GET /api/user/?id=62e89da6af5b5f048f3735b6 HTTP/1.1" 200 829 "-" "insomnia/2022.5.0"
 ::ffff:172.18.0.1 - - [24/Aug/2022:06:55:32 +0000] "GET /api/url HTTP/1.1" 200 479 "-" "insomnia/2022.5.0"
+::ffff:127.0.0.1 - - [26/Aug/2022:05:53:45 +0000] "GET /api/url HTTP/1.1" 200 479 "-" "insomnia/2022.5.0"
+::ffff:127.0.0.1 - - [26/Aug/2022:05:53:52 +0000] "POST /api/auth/register HTTP/1.1" 200 128 "-" "insomnia/2022.5.0"
+::ffff:127.0.0.1 - - [26/Aug/2022:05:55:12 +0000] "POST /api/auth/login HTTP/1.1" 200 259 "-" "insomnia/2022.5.0"
