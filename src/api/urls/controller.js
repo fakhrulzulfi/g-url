@@ -45,7 +45,7 @@ exports.insert = async (req, res) => {
                 return res.status(201).send({
                     status: 'success',
                     message: 'Shortlink berhasil dibuat',
-                    link: `http://localhost:1337/${result.short_url}`
+                    link: `${req.protocol}://${req.get('host')}/${result.short_url}`
                 });
             })
             .catch(error => {
