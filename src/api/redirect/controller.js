@@ -18,3 +18,8 @@ exports.redirectTo = async (req, res) => {
         });
     }
 };
+
+exports.home = async (req, res) => {
+    res.setHeader('Content-type','text/html');
+    return res.status(200).send(`<h1>Doi Shortlink Generator</h1><p>Selamat datang di API Doi Shortlink Generator</p><hr><p>Untuk dokumentasi penggunaan API, silahkan menuju <a href="https://api-gurl-shortlink.herokuapp.com">Dokumentasi API</a></p>`);
+};
