@@ -78,7 +78,7 @@ exports.register = async (req, res) => {
                     <h1>Email Confirmation</h1>
                     <h2>Halo, selamat ${result.username} pendaftaran akun anda berhasil!</h2>
                     <p>Selanjutnya, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda</p>
-                    <p>http://localhost:1337/api/user/confirm/${result._id}/${result.token}</p>
+                    <p>${req.protocol}://${req.get('host')}/api/user/confirm/${result._id}/${result.token}</p>
                     <p>Tautan tersebut hanya berlaku selama 48 jam.</p>
                     <br>
                     <p>Terima kasih,</p>

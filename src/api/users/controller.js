@@ -209,7 +209,7 @@ exports.changeEmail = async (req, res) => {
             <h1>Email Confirmation</h1>
             <h2>Halo, selamat ${user.username} pengubahan akun Email anda berhasil!</h2>
             <p>Saat ini status akun Anda non-aktif, silahkan klik tautan dibawah ini untuk mengaktifkan akun Anda.</p>
-            <p>http://localhost:1337/api/user/confirm/${user._id}/${user.token}</p>
+            <p>${req.protocol}://${req.get('host')}/api/user/confirm/${user._id}/${user.token}</p>
             <p>Tautan tersebut hanya berlaku selama 48 jam.</p>
             <br>
             <p>Terima kasih,</p>
